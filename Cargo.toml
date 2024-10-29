@@ -1,0 +1,23 @@
+[package]
+name = "oxide"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aes-gcm = "0.10.1"
+base64 = "0.21.0"
+chrono = "0.4.26"
+csv = "1.1.6"
+reqwest = { version = "0.11", features = ["blocking", "json", "multipart"] }
+serde_json = "1.0.104"
+sqlite = "0.26.0"
+tempdir = "0.3.7"
+walkdir = "2.3.3"
+winapi = { version = "0.3.9", features = ["wincrypt", "dpapi"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 'z'
+panic = "abort"
+strip = "symbols"

