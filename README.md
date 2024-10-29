@@ -17,3 +17,9 @@ This code is what (partially) runs under the hood in my Ferric RMP project.
 # Disclaimer
  - This was not designed to be evasive, persistant, or undetected. This was made as a proof of concept, you can expand on it if you need other functionality.
  - The webUI is not nessesary, you can find all logs at ./oxide_logs/
+
+# WebUI (Main)
+![Oxide Credential Recovery Server](https://i.ibb.co/GtN6fkT/Screenshot-2024-10-29-at-14-56-22-Oxide-Credential-Recovery-Server.png)
+# WebUI (Credential Preview)
+![Oxide Credential Recovery Server](https://i.ibb.co/nMjjWDG/Screenshot-2024-10-29-at-15-40-40-Oxide-Credential-Recovery-Server.png)
+
