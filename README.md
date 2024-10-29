@@ -8,7 +8,7 @@ This code is what (partially) runs under the hood in my Ferric RMP project.
  - Server keeps track and maintains a banned IP list.
  - API key is required to communicate with the server, or IP will be banned.
  - .CSV files are the only upload type allowed, or IP will be banned.
- - Server logs in console, but also has a *simplistic and clean WebUI* to browse logged credentials.
+ - Server logs in console, but also has a *simplistic and clean WebUI* hosted locally to browse the logged credentials.
 
 # Setup
  1.) Build the client by ```cargo build --release``` - it should be about 2MB. *(This size can be reduced by swapping chrono or reqwest with smaller libs, and packing)*  
