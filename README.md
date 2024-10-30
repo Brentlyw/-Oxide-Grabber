@@ -1,4 +1,5 @@
-# Oxide Grabber
+![Logo](https://i.ibb.co/ZJVkW4t/Untitled-design.png)
+
 A working proof of concept for a Rust based credential "stealer" which exfiltrates to a Python HTTP server.  
 This code is what (partially) runs under the hood in my Ferric RMP project.
 
