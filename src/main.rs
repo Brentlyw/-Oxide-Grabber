@@ -207,7 +207,7 @@ fn get_master_key(local_state_path: &PathBuf) -> Result<Vec<u8>, String> {
     if encrypted_key.len() < 5 { 
         return Err("Encrypted key too short.".to_string()); 
     }
-    encrypted_key = encrypted_key[5..].to_vec(); // Remove 'DPAPI' prefix
+    encrypted_key = encrypted_key[5..].to_vec();
     decrypt_encrypted_key(encrypted_key).ok_or("Master key decryption failed!".to_string())
 }
 
