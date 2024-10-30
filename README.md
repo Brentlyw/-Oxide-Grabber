@@ -15,7 +15,7 @@ This code is what (partially) runs under the hood in my Ferric RMP project.
  2.) Run the server.py script, which will run on 127.0.0.1:8000 *(Change this as needed, and in the main.rs)*  
 
 # Disclaimer
- - This was ***not*** designed to be evasive, persistant, or undetected (though, it is undetected currently). This was made as a proof of concept, you can expand on it if you need other functionality.
+ - This was ***not*** designed to be evasive, persistant, or undetected ([Current Detections](https://tip.neiki.dev/file/b5442ee156093a526c51f925ccbf1ee3a0363fe2c7cf60580d98238c2d1ddb9c)). This was made as a proof of concept, you can expand on it if you need other functionality.
  - The webUI is not nessesary, you can find all logs at ./oxide_logs/
 
 # WebUI (Main)
